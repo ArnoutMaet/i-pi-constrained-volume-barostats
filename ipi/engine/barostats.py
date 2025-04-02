@@ -92,7 +92,7 @@ class Barostat:
     """
 
     def __init__(
-        self, dt=None, temp=None, tau=None, ebaro=None, thermostat=None, nmts=None
+        self, dt=None, temp=None, tau=None, ebaro=None, thermostat=None, vol_constraint=None, nmts=None
     ):
         """Initialises base barostat class.
 
@@ -138,6 +138,8 @@ class Barostat:
         if thermostat is None:
             thermostat = Thermostat()
         self.thermostat = thermostat
+
+        self.vol_constraint = vol_constraint
 
         # temperature to the thermostat
         dpipe(self._temp, self.thermostat._temp)
@@ -1163,6 +1165,7 @@ class BaroMTK(Barostat):
         tau=None,
         ebaro=None,
         thermostat=None,
+        vol_constraint=None,
         pext=None,
         p=None,
         hfix=None,
@@ -1182,7 +1185,7 @@ class BaroMTK(Barostat):
         p: Optional initial volume conjugate momentum. Defaults to 0.
         """
 
-        super(BaroMTK, self).__init__(dt, temp, tau, ebaro, thermostat)
+        super(BaroMTK, self).__init__(dt, temp, tau, ebaro, thermostat, vol_constraint)
 
         # non-zero elements of the cell momentum are only
         # pxx pyy pzz pxy pxz pyz, but we want to access it either as a
@@ -1377,6 +1380,9 @@ class BaroMTK(Barostat):
         # we use the thermostat conserved quantity accumulator, so we don't need to create a new one
         self.thermostat.ethermo += self.kin
         self.p *= self.hmask
+        if self.vol_constraint is True:
+            # it can be shown that the volume stays fixed by making the momentum tensor traceless
+            self.p -= np.eye(3) * np.trace(self.p) / 3.0
         self.thermostat.ethermo -= self.kin
 
     def qcstep(self):

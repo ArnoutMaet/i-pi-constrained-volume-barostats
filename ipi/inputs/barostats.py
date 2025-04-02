@@ -95,6 +95,14 @@ class InputBaro(Input):
                 "help": "A list of the cell entries that should be held fixed (xx, yy, zz, xy, xz, yz). 'offdiagonal' is an alias for xy, xz, yz.",
             },
         ),
+        "vol_constraint": (
+            InputValue,
+            {
+                "default": False,
+                "dtype": bool,
+                "help": "If True, the cell volume is kept fixed at its initial value."
+            }
+        ),
     }
 
     default_help = "Simulates an external pressure bath."
@@ -117,6 +125,7 @@ class InputBaro(Input):
             self.mode.store("sc-isotropic")
             self.p.store(baro.p)
         elif type(baro) is BaroMTK:
+            self.vol_constraint.store(baro.vol_constraint)
             self.mode.store("flexible")
             self.p.store(baro.p)
             self.hfix.store(baro.hfix)
@@ -154,6 +163,7 @@ class InputBaro(Input):
                 thermostat=self.thermostat.fetch(),
                 tau=self.tau.fetch(),
                 hfix=self.hfix.fetch(),
+                vol_constraint=self.vol_constraint.fetch(),
             )
             if self.p._explicit:
                 baro.p = self.p.fetch()
